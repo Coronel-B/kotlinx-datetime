@@ -10,7 +10,7 @@ import kotlinx.serialization.descriptors.*
 import kotlinx.serialization.encoding.*
 import kotlin.time.*
 
-object DateTimePeriodSerializer: KSerializer<DateTimePeriod> {
+object DateTimePeriodComponentSerializer: KSerializer<DateTimePeriod> {
 
     override val descriptor: SerialDescriptor =
         buildClassSerialDescriptor("Instant") {
@@ -64,7 +64,7 @@ object DateTimePeriodSerializer: KSerializer<DateTimePeriod> {
 
 }
 
-@Serializable(with = DateTimePeriodSerializer::class)
+@Serializable(with = DateTimePeriodComponentSerializer::class)
 // TODO: could be error-prone without explicitly named params
 sealed class DateTimePeriod {
     abstract val years: Int
@@ -286,7 +286,7 @@ sealed class DateTimePeriod {
     }
 }
 
-object DatePeriodSerializer: KSerializer<DatePeriod> {
+object DatePeriodComponentSerializer: KSerializer<DatePeriod> {
 
     private fun unexpectedNonzero(fieldName: String, value: Long) {
         if (value != 0L) {
@@ -296,7 +296,7 @@ object DatePeriodSerializer: KSerializer<DatePeriod> {
 
     private fun unexpectedNonzero(fieldName: String, value: Int) = unexpectedNonzero(fieldName, value.toLong())
 
-    override val descriptor: SerialDescriptor = DateTimePeriodSerializer.descriptor
+    override val descriptor: SerialDescriptor = DateTimePeriodComponentSerializer.descriptor
 
     override fun deserialize(decoder: Decoder): DatePeriod =
         decoder.decodeStructure(descriptor) {
@@ -322,16 +322,16 @@ object DatePeriodSerializer: KSerializer<DatePeriod> {
     override fun serialize(encoder: Encoder, value: DatePeriod) {
         encoder.encodeStructure(descriptor) {
             with(value) {
-                if (years != 0) encodeIntElement(DateTimePeriodSerializer.descriptor, 0, years)
-                if (months != 0) encodeIntElement(DateTimePeriodSerializer.descriptor, 1, months)
-                if (days != 0) encodeIntElement(DateTimePeriodSerializer.descriptor, 2, days)
+                if (years != 0) encodeIntElement(DateTimePeriodComponentSerializer.descriptor, 0, years)
+                if (months != 0) encodeIntElement(DateTimePeriodComponentSerializer.descriptor, 1, months)
+                if (days != 0) encodeIntElement(DateTimePeriodComponentSerializer.descriptor, 2, days)
             }
         }
     }
 
 }
 
-@Serializable(with = DatePeriodSerializer::class)
+@Serializable(with = DatePeriodComponentSerializer::class)
 class DatePeriod(
         override val years: Int = 0,
         override val months: Int = 0,

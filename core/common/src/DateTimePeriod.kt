@@ -32,7 +32,7 @@ object DateTimePeriodComponentSerializer: KSerializer<DateTimePeriod> {
             var minutes = 0
             var seconds = 0L
             var nanoseconds = 0L
-            while (true) {
+            loop@while (true) {
                 when (val index = decodeElementIndex(descriptor)) {
                     0 -> years = decodeIntElement(descriptor, 0)
                     1 -> months = decodeIntElement(descriptor, 1)
@@ -41,7 +41,7 @@ object DateTimePeriodComponentSerializer: KSerializer<DateTimePeriod> {
                     4 -> minutes = decodeIntElement(descriptor, 4)
                     5 -> seconds = decodeLongElement(descriptor, 5)
                     6 -> nanoseconds = decodeLongElement(descriptor, 6)
-                    CompositeDecoder.DECODE_DONE -> break
+                    CompositeDecoder.DECODE_DONE -> break@loop // https://youtrack.jetbrains.com/issue/KT-42262
                     else -> error("Unexpected index: $index")
                 }
             }
@@ -64,7 +64,21 @@ object DateTimePeriodComponentSerializer: KSerializer<DateTimePeriod> {
 
 }
 
-@Serializable(with = DateTimePeriodComponentSerializer::class)
+object DateTimePeriodISO8601Serializer: KSerializer<DateTimePeriod> {
+
+    override val descriptor: SerialDescriptor =
+        PrimitiveSerialDescriptor("DateTimePeriod", PrimitiveKind.STRING)
+
+    override fun deserialize(decoder: Decoder): DateTimePeriod =
+        DateTimePeriod.parse(decoder.decodeString())
+
+    override fun serialize(encoder: Encoder, value: DateTimePeriod) {
+        encoder.encodeString(value.toString())
+    }
+
+}
+
+@Serializable(with = DateTimePeriodISO8601Serializer::class)
 // TODO: could be error-prone without explicitly named params
 sealed class DateTimePeriod {
     abstract val years: Int
@@ -331,7 +345,25 @@ object DatePeriodComponentSerializer: KSerializer<DatePeriod> {
 
 }
 
-@Serializable(with = DatePeriodComponentSerializer::class)
+object DatePeriodISO8601Serializer: KSerializer<DatePeriod> {
+
+    override val descriptor: SerialDescriptor =
+        PrimitiveSerialDescriptor("DatePeriod", PrimitiveKind.STRING)
+
+    // TODO: consider whether should fail when parsing "P1YT0H0M0.0S"
+    override fun deserialize(decoder: Decoder): DatePeriod =
+        when (val period = DateTimePeriod.parse(decoder.decodeString())) {
+            is DatePeriod -> period
+            else -> throw IllegalArgumentException("$period is not a date-based period")
+        }
+
+    override fun serialize(encoder: Encoder, value: DatePeriod) {
+        encoder.encodeString(value.toString())
+    }
+
+}
+
+@Serializable(with = DatePeriodISO8601Serializer::class)
 class DatePeriod(
         override val years: Int = 0,
         override val months: Int = 0,

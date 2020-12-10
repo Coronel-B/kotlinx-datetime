@@ -13,7 +13,7 @@ import kotlin.time.*
 object DateTimePeriodComponentSerializer: KSerializer<DateTimePeriod> {
 
     override val descriptor: SerialDescriptor =
-        buildClassSerialDescriptor("Instant") {
+        buildClassSerialDescriptor("DateTimePeriod") {
             element<Int>("years", isOptional = true)
             element<Int>("months", isOptional = true)
             element<Int>("days", isOptional = true)
@@ -310,7 +310,16 @@ object DatePeriodComponentSerializer: KSerializer<DatePeriod> {
 
     private fun unexpectedNonzero(fieldName: String, value: Int) = unexpectedNonzero(fieldName, value.toLong())
 
-    override val descriptor: SerialDescriptor = DateTimePeriodComponentSerializer.descriptor
+    override val descriptor: SerialDescriptor =
+        buildClassSerialDescriptor("DatePeriod") {
+            element<Int>("years", isOptional = true)
+            element<Int>("months", isOptional = true)
+            element<Int>("days", isOptional = true)
+            element<Int>("hours", isOptional = true)
+            element<Int>("minutes", isOptional = true)
+            element<Long>("seconds", isOptional = true)
+            element<Long>("nanoseconds", isOptional = true)
+        }
 
     override fun deserialize(decoder: Decoder): DatePeriod =
         decoder.decodeStructure(descriptor) {
